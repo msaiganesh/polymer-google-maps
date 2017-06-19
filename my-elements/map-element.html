@@ -1,0 +1,174 @@
+<script src="../bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+<link rel="import" href="../bower_components/google-map/google-map.html">
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+
+
+<link rel="import" href="../bower_components/google-apis/google-maps-api.html">
+<link rel="import" href="../bower_components/google-map/google-map-point.html">
+<link rel="import" href="../bower_components/geo-location/geo-location.html">
+<dom-module id="map-element">
+  <template >
+    <style>
+      google-map{
+        height: 90%;
+        }
+      paper-card{
+        top:10px;
+        left:10px;
+        }
+    </style>
+  <!-- <h1>hello world</h1> -->
+
+    <google-maps-api api-key="AIzaSyB8YtSJMz0LWiV3un9QXxXbbRp1sKDQg74" version="3.exp"></google-maps-api>
+
+    <geo-location watch-pos high-accuracy latitude="{{lat}}" longitude="{{long}}" on-geo-response="_onGeoResponse" >  </geo-location>
+
+    <google-map map="{{map}}" id="mymapid"  latitude="[[lat]]" longitude="[[long]]"   api-key="AIzaSyB8YtSJMz0LWiV3un9QXxXbbRp1sKDQg74" fit-to-marker  zoom="16"  >
+
+    <google-map-marker latitude="{{lat_marker}}" longitude="{{long_marker}}"  title="You are here" draggable=true></google-map-marker>
+
+    </google-map>
+
+                <paper-card elevation="2">
+                  current-latitude:{{lat}}   changed-latitude:{{lat_marker}} {{lat_last}}
+                  <br>current-longitude:{{long}}  changed-longitude:{{long_marker}} {{long_last}}
+
+                 </paper-card>
+  </template>
+
+<script>
+
+ Polymer({
+    is:"map-element",
+
+
+    properties: {
+      lat: {
+        type:Number,
+        value:17.38
+      },
+      long: {
+        type:Number,
+        value:78.48
+      },
+      accuracy: {
+        type:Number,
+        value: 0
+      },
+      lat_marker: {
+        type:Number,
+        value:0
+
+      },
+      long_marker: {
+        type:Number,
+        value:0
+      },
+      api :{
+        type:Object
+      },
+      oldcircle:{
+        type:Object
+      },
+      drag_able:{
+        type: Boolean,
+        value: false
+      },
+      long_last: {
+        type:Number,
+      },
+      lat_last: {
+        type:Number,
+      }
+ },
+    observers: [
+      '_onLocationChange(lat,long,accuracy)',
+      '_ondragchange(lat_marker,long_marker)'
+    ],
+
+    _ondragchange: function(lat_marker,long_marker){
+        console.log("DRAGGED");
+          var temp = google.maps.geometry.spherical.computeDistanceBetween(
+            new google.maps.LatLng( this.lat, this.long ),
+            new google.maps.LatLng( this.lat_marker, this.long_marker )
+          ) <= this.accuracy;
+          console.log(temp);
+          if(temp==false)
+         {
+            if (this.lat_last && this.long_last)
+            {
+                this.lat_marker=this.lat_last;
+                this.long_marker=this.long_last;
+            }
+            else {
+              this.lat_marker=this.lat;
+              this.long_marker=this.long;
+              console.log(this.lat_last,this.long_last);
+            }
+          }
+          else {
+            this.lat_last = this.lat_marker;
+            this.long_last = this.long_marker;
+          }
+
+        },
+
+
+    _onLocationChange: function(lat,long,accuracy)
+    {
+
+     if(lat&&long&&accuracy){
+          centermarker = { lat:this.lat , lng:this.long}
+        console.log(centermarker);
+
+        try{
+           oldcircle.setMap(null);
+
+        }
+        catch(e){
+          console.log(e);
+        }
+
+       try{
+
+        oldcircle =  new google.maps.Circle({
+        strokeColor: 'BLUE',
+        strokeOpacity: 0.3,
+        strokeWeight: 1,
+        fillColor: 'RED',
+        fillOpacity: 0.3,
+        map: this.$.mymapid.map,
+        center: centermarker,
+        radius:accuracy
+      })
+
+    }
+      catch(err){
+            console.log(err);
+      }
+    }
+
+ },
+///ongeoresponse
+    _onGeoResponse: function(p)
+    {
+
+        console.log(">> GeoLocation: ", p.detail);
+        this.lat=p.detail.position.coords.latitude;
+        this.long=p.detail.position.coords.longitude;
+        this.accuracy=p.detail.position.coords.accuracy;
+
+        if (this.lat_marker === 0 && this.long_marker === 0)
+        {
+          this.lat_marker = this.lat;
+          this.long_marker = this.long;
+        }
+        this.lat_last = this.lat_marker;
+        this.long_last = this.long_marker;
+    }
+
+});
+</script>
+
+</dom-module>
